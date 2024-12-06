@@ -2,7 +2,7 @@ import requests
 import json
 import sys
 
-def search_stix_core_objects(api_key, search_term, output_file):
+def search_stix_core_objects(api_key, search_term):
     url = "http://192.168.56.1:8080/graphql"
 
     headers = {
@@ -25,95 +25,95 @@ def search_stix_core_objects(api_key, search_term, output_file):
     payload = {
         "id": "SearchStixCoreObjectsLinesPaginationQuery",
         "query": """query SearchStixCoreObjectsLinesPaginationQuery(
-  $types: [String]
-  $search: String
-  $count: Int!
-  $cursor: ID
-  $orderBy: StixCoreObjectsOrdering
-  $orderMode: OrderingMode
-  $filters: FilterGroup
+    $types: [String]
+    $search: String
+    $count: Int!
+    $cursor: ID
+    $orderBy: StixCoreObjectsOrdering
+    $orderMode: OrderingMode
+    $filters: FilterGroup
 ) {
-  ...SearchStixCoreObjectsLines_data_4GmerJ
+    ...SearchStixCoreObjectsLines_data_4GmerJ
 }
 
 fragment SearchStixCoreObjectLine_node on StixCoreObject {
-  __isStixCoreObject: __typename
-  id
-  parent_types
-  entity_type
-  created_at
-  ... on StixObject {
-    __isStixObject: __typename
-    representative {
-      main
-      secondary
+    __isStixCoreObject: __typename
+    id
+    parent_types
+    entity_type
+    created_at
+    ... on StixObject {
+        __isStixObject: __typename
+        representative {
+            main
+            secondary
+        }
     }
-  }
-  createdBy {
-    __typename
-    __isIdentity: __typename
-    name
-    id
-  }
-  objectMarking {
-    id
-    definition_type
-    definition
-    x_opencti_order
-    x_opencti_color
-  }
-  objectLabel {
-    id
-    value
-    color
-  }
-  creators {
-    id
-    name
-  }
-  containersNumber {
-    total
-  }
+    createdBy {
+        __typename
+        __isIdentity: __typename
+        name
+        id
+    }
+    objectMarking {
+        id
+        definition_type
+        definition
+        x_opencti_order
+        x_opencti_color
+    }
+    objectLabel {
+        id
+        value
+        color
+    }
+    creators {
+        id
+        name
+    }
+    containersNumber {
+        total
+    }
 }
 
 fragment SearchStixCoreObjectsLines_data_4GmerJ on Query {
-  globalSearch(types: $types, search: $search, first: $count, after: $cursor, orderBy: $orderBy, orderMode: $orderMode, filters: $filters) {
-    edges {
-      node {
-        __typename
-        id
-        entity_type
-        created_at
-        createdBy {
-          __typename
-          __isIdentity: __typename
-          name
-          id
+    globalSearch(types: $types, search: $search, first: $count, after: $cursor, orderBy: $orderBy, orderMode: $orderMode, filters: $filters) {
+        edges {
+            node {
+                __typename
+                id
+                entity_type
+                created_at
+                createdBy {
+                    __typename
+                    __isIdentity: __typename
+                    name
+                    id
+                }
+                creators {
+                    id
+                    name
+                }
+                objectMarking {
+                    id
+                    definition_type
+                    definition
+                    x_opencti_order
+                    x_opencti_color
+                }
+                ...SearchStixCoreObjectLine_node
+            }
+            cursor
         }
-        creators {
-          id
-          name
+        pageInfo {
+            endCursor
+            hasNextPage
+            globalCount
         }
-        objectMarking {
-          id
-          definition_type
-          definition
-          x_opencti_order
-          x_opencti_color
-        }
-        ...SearchStixCoreObjectLine_node
-      }
-      cursor
     }
-    pageInfo {
-      endCursor
-      hasNextPage
-      globalCount
-    }
-  }
 }""",
         "variables": {
-            "count": 25,
+            "count": 100,
             "orderMode": "desc",
             "orderBy": "_score",
             "filters": {
@@ -121,7 +121,7 @@ fragment SearchStixCoreObjectsLines_data_4GmerJ on Query {
                 "filters": [
                     {
                         "key": "entity_type",
-                        "values": ["Stix-Core-Object"],
+                        "values": ["Incident", "Url", "User-Account", "Credential"],  # Thay đổi phần này
                         "operator": "eq",
                         "mode": "or"
                     }
@@ -134,24 +134,20 @@ fragment SearchStixCoreObjectsLines_data_4GmerJ on Query {
 
     response = requests.post(url, headers=headers, json=payload)
 
-    # In ra toàn bộ nội dung response với định dạng JSON dễ đọc và ghi vào tệp
+    # In ra toàn bộ nội dung response với định dạng JSON dễ đọc
     formatted_response = {
         "Status Code": response.status_code,
         "Response Headers": dict(response.headers),
         "Response Content": response.json()
     }
+    print(json.dumps(formatted_response, indent=4))
 
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(formatted_response, f, ensure_ascii=False, indent=4)
-
-    print(f"Kết quả đã được ghi vào tệp: {output_file}")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python search_query.py <api_key> <search_term> <output_file>")
+    if len(sys.argv) != 2:
+        print("Usage: python search_query.py <api_key> <search_term>")
         sys.exit(1)
 
     api_key = "b4e69d3d-8e36-4633-ab10-ca542671f821"
     search_term = sys.argv[1]
-    output_file = sys.argv[2]
-    search_stix_core_objects(api_key, search_term, output_file)
+    search_stix_core_objects(api_key, search_term)
